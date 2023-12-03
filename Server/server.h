@@ -11,6 +11,7 @@ class Server : public QTcpServer {
 
 public:
     Server();
+    ~Server();
 
     QTcpSocket *socket;
 
@@ -24,6 +25,7 @@ private:
 private slots:
     void incomingConnection(qintptr socketDescriptor);
     void slotReadyRead();
+    void slotSocketDelete();
 
 };
 

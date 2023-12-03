@@ -2,7 +2,7 @@
 
 #include <QDebug>
 
-Messenger::Messenger() {
+Messenger::Messenger() : messageSize(0) {
 
     this->socket = new QTcpSocket(this);
 
@@ -34,7 +34,7 @@ void Messenger::slotReadyRead() {
 
             if (this->messageSize == 0) {
 
-                if (this->socket->bytesAvailable() < sizeof(quint32)) {
+                if (this->socket->bytesAvailable() < (int) sizeof(quint32)) {
 
                     break;
 
@@ -44,16 +44,24 @@ void Messenger::slotReadyRead() {
 
                 }
 
-            } else if (this->socket->bytesAvailable() < this->messageSize) {
+            }
+
+            if (this->socket->bytesAvailable() < this->messageSize) {
 
                 break;
 
             } else {
 
+                qDebug() << messageSize;
+
                 in >> this->strMessage;
                 this->messageSize = 0;
 
+                qDebug() << strMessage;
+
                 emit signalAddMessage();
+
+                break;
 
             }
 
@@ -70,16 +78,16 @@ void Messenger::slotReadyRead() {
 
 void Messenger::sendToServer(QString str) {
 
-    this->messageData.clear();
+    this->messageByte.clear();
 
-    QDataStream out(&this->messageData, QDataStream::WriteOnly);
+    QDataStream out(&this->messageByte, QDataStream::WriteOnly);
     out.setVersion(QDataStream::Version::Qt_6_6);
 
     out << quint32(0) << str;
 
     out.device()->seek(0);
-    out << quint32(this->messageData.size()) - sizeof(quint32);
+    out << quint32(this->messageByte.size() - sizeof(quint32));
 
-    this->socket->write(this->messageData);
+    this->socket->write(this->messageByte);
 
 }

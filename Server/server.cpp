@@ -2,7 +2,7 @@
 
 #include <QDebug>
 
-Server::Server() {
+Server::Server() : messageSize(0) {
 
     if (this->listen(QHostAddress::Any, 1080)) {
         qDebug() << "Server working.";
@@ -12,17 +12,36 @@ Server::Server() {
 
 }
 
+Server::~Server() {
+
+    this->close();
+    qDebug() << "Server stoped.";
+
+}
+
 void Server::incomingConnection(qintptr socketDescriptor) {
 
     this->socket = new QTcpSocket;
     socket->setSocketDescriptor(socketDescriptor);
 
     connect(socket, &QTcpSocket::readyRead, this, &Server::slotReadyRead);
-    connect(socket, &QTcpSocket::disconnected, socket, &QTcpSocket::deleteLater);
+    connect(socket, &QTcpSocket::disconnected, this, &Server::slotSocketDelete);
 
     this->sockets.push_back(socket);
 
     qDebug() << "Client connected - " << socketDescriptor;
+
+}
+
+void Server::slotSocketDelete() {
+
+    this->socket = reinterpret_cast<QTcpSocket*>(sender());
+
+    this->sockets.removeOne(this->socket);
+
+    qDebug() << "Socket deleted.";
+
+    this->socket->deleteLater();
 
 }
 
@@ -43,7 +62,7 @@ void Server::slotReadyRead() {
 
             if (this->messageSize == 0) {
 
-                if (this->socket->bytesAvailable() < sizeof(quint32)) {
+                if (this->socket->bytesAvailable() < (int) sizeof(quint32)) {
 
                     break;
 
@@ -53,7 +72,9 @@ void Server::slotReadyRead() {
 
                 }
 
-            } else if (this->socket->bytesAvailable() < this->messageSize) {
+            }
+
+            if (this->socket->bytesAvailable() < this->messageSize) {
 
                 break;
 
@@ -63,6 +84,8 @@ void Server::slotReadyRead() {
                 this->messageSize = 0;
 
                 sendToClient(strMessage);
+
+                break;
 
             }
 
@@ -86,11 +109,10 @@ void Server::sendToClient(QString str) {
     out << quint32(0) << str;
 
     out.device()->seek(0);
-    out << quint32(this->messageByte.size()) - sizeof(quint32);
+    out << quint32(this->messageByte.size() - sizeof(quint32));
 
     for (auto iter : this->sockets) {
         iter->write(this->messageByte);
-        qDebug() << "Send.";
     }
 
 }

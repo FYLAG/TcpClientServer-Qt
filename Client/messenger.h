@@ -24,7 +24,7 @@ public:
 private:
     QString strMessage;
     QTcpSocket *socket;
-    QByteArray messageData;
+    QByteArray messageByte;
     quint32 messageSize;
 
 private slots:
