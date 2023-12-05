@@ -2,7 +2,7 @@
 
 #include <QDebug>
 
-Messenger::Messenger() : messageSize(0) {
+Messenger::Messenger(QString login) : userLogin(login) {
 
     this->socket = new QTcpSocket(this);
 
@@ -13,12 +13,16 @@ Messenger::Messenger() : messageSize(0) {
 
 }
 
+QString Messenger::getUserLogin() {
+    return this->userLogin;
+}
+
 QString Messenger::getMessage() {
     return this->strMessage;
 }
 
 void Messenger::serverConnect() {
-    this->socket->connectToHost("127.0.0.1", 1080);
+    this->socket->connectToHost("185.248.101.68", 1080); // 127.0.0.1
 }
 
 void Messenger::slotReadyRead() {
@@ -30,45 +34,22 @@ void Messenger::slotReadyRead() {
 
     if (in.status() == QDataStream::Ok) {
 
-        while(true) {
+        in.startTransaction();
 
-            if (this->messageSize == 0) {
+        in >> this->strMessage;
 
-                if (this->socket->bytesAvailable() < (int) sizeof(quint32)) {
+        if (in.commitTransaction()) {
 
-                    break;
+            qDebug() << strMessage;
+            emit signalAddMessage();
 
-                } else {
-
-                    in >> this->messageSize;
-
-                }
-
-            }
-
-            if (this->socket->bytesAvailable() < this->messageSize) {
-
-                break;
-
-            } else {
-
-                qDebug() << messageSize;
-
-                in >> this->strMessage;
-                this->messageSize = 0;
-
-                qDebug() << strMessage;
-
-                emit signalAddMessage();
-
-                break;
-
-            }
-
+        } else {
+            return;
         }
 
     } else {
 
+        qDebug() << "Status: ERROR.";
         // strMessage = "Error message read...";
         // emit signalAddMessage();
 
@@ -83,10 +64,7 @@ void Messenger::sendToServer(QString str) {
     QDataStream out(&this->messageByte, QDataStream::WriteOnly);
     out.setVersion(QDataStream::Version::Qt_6_6);
 
-    out << quint32(0) << str;
-
-    out.device()->seek(0);
-    out << quint32(this->messageByte.size() - sizeof(quint32));
+    out << this->userLogin << str;
 
     this->socket->write(this->messageByte);
 

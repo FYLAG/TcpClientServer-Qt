@@ -1,7 +1,9 @@
 #include "presenter.h"
 
 Presenter::Presenter(IView *view, QObject *parent)
-        : QObject(parent), view(view), model(new Messenger()) {
+        : QObject(parent), view(view), model(new Messenger("New User")) {
+
+    view->setUserLogin(model->getUserLogin());
 
     QObject *viewObject = dynamic_cast<QObject*>(this->view);
 

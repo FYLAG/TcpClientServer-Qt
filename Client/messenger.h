@@ -11,7 +11,9 @@ class Messenger : public QObject {
     Q_OBJECT
 
 public:
-    explicit Messenger();
+    explicit Messenger(QString login);
+
+    QString getUserLogin();
 
     QString getMessage();
 
@@ -22,10 +24,12 @@ public:
     void sendToServer(QString str);
 
 private:
+
+    QString userLogin;
+
     QString strMessage;
     QTcpSocket *socket;
     QByteArray messageByte;
-    quint32 messageSize;
 
 private slots:
     void slotReadyRead();

@@ -10,6 +10,8 @@
 class IView {
 
 public:
+    /*! Method for set the user login */
+    virtual void setUserLogin(QString str) = 0;
     /*! Method for add text message to chat */
     virtual void addMessage(QString str) = 0;
     /*! Method for getting user text message */

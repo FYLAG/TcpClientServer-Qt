@@ -17,8 +17,6 @@ public:
 
 private:
     QVector<QTcpSocket*> sockets;
-    QByteArray messageByte;
-    quint32 messageSize;
 
     void sendToClient(QString str);
 

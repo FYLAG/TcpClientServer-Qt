@@ -14,6 +14,10 @@ Form::~Form() {
     delete ui;
 }
 
+void Form::setUserLogin(QString str) {
+    this->ui->label_userLogin->setText(str);
+}
+
 void Form::addMessage(QString str) {
     this->ui->textBrowser->append(str);
 }

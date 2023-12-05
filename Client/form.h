@@ -21,6 +21,8 @@ class Form : public QMainWindow, public IView {
 public:
     Form(QWidget *parent = nullptr);
     ~Form();
+    /*! Method for set the user login */
+    void setUserLogin(QString str) override;
     /*! Method for add text message to chat */
     void addMessage(QString str) override;
     /*! Method for getting user text message */
@@ -30,6 +32,7 @@ private:
     Ui::Form *ui;
 
 private slots:
+
     void on_pushButton_sendMessage_clicked();
 
     void on_lineEdit_returnPressed();

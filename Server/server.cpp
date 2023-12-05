@@ -2,9 +2,9 @@
 
 #include <QDebug>
 
-Server::Server() : messageSize(0) {
+Server::Server() {
 
-    if (this->listen(QHostAddress::Any, 1080)) {
+    if (this->listen(QHostAddress("0.0.0.0"), 1080)) { // QHostAddress::Any
         qDebug() << "Server working.";
     } else {
         qDebug() << "Server don't work.";
@@ -39,7 +39,7 @@ void Server::slotSocketDelete() {
 
     this->sockets.removeOne(this->socket);
 
-    qDebug() << "Socket deleted.";
+    qDebug() << "Client disconnected.";
 
     this->socket->deleteLater();
 
@@ -49,46 +49,29 @@ void Server::slotReadyRead() {
 
     this->socket = reinterpret_cast<QTcpSocket*>(sender());
 
-    QDataStream in(socket);
+    QDataStream in(this->socket);
     in.setVersion(QDataStream::Version::Qt_6_6);
 
     if (in.status() == QDataStream::Ok) {
 
         qDebug() << "Status: OK, Message: read...";
 
+        QString strUserLogin;
         QString strMessage;
 
-        while(true) {
+        in.startTransaction();
 
-            if (this->messageSize == 0) {
+        in >> strUserLogin >> strMessage ;
 
-                if (this->socket->bytesAvailable() < (int) sizeof(quint32)) {
+        if (in.commitTransaction()) {
 
-                    break;
+            strMessage = strUserLogin + ":\t" + strMessage;
+            qDebug() << strMessage;
 
-                } else {
+            sendToClient(strMessage);
 
-                    in >> this->messageSize;
-
-                }
-
-            }
-
-            if (this->socket->bytesAvailable() < this->messageSize) {
-
-                break;
-
-            } else {
-
-                in >> strMessage;
-                this->messageSize = 0;
-
-                sendToClient(strMessage);
-
-                break;
-
-            }
-
+        } else {
+            return;
         }
 
     } else {
@@ -101,18 +84,15 @@ void Server::slotReadyRead() {
 
 void Server::sendToClient(QString str) {
 
-    this->messageByte.clear();
+    QByteArray messageByte;
 
-    QDataStream out(&this->messageByte, QIODevice::WriteOnly);
+    QDataStream out(&messageByte, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Version::Qt_6_6);
 
-    out << quint32(0) << str;
-
-    out.device()->seek(0);
-    out << quint32(this->messageByte.size() - sizeof(quint32));
+    out << str;
 
     for (auto iter : this->sockets) {
-        iter->write(this->messageByte);
+        iter->write(messageByte);
     }
 
 }
